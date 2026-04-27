@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreArticleRequest;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
@@ -19,8 +21,11 @@ class ArticleController extends Controller
 
         // Recherche par mot-clé
         if ($request->filled('search')) {
-            $query->where('title', 'LIKE', '%' . $request->search . '%')
-                  ->orWhere('description', 'LIKE', '%' . $request->search . '%');
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'LIKE', '%'.$search.'%')
+                  ->orWhere('description', 'LIKE', '%'.$search.'%');
+            });
         }
 
         // Filtre par catégorie (slug)
@@ -56,7 +61,15 @@ class ArticleController extends Controller
 
         $articles = $query->paginate(12);
 
-        return view('articles.index', compact('articles'));
+        // ✅ Catégories pour les filtres
+        $categories = \App\Models\Category::orderBy('name')->get();
+
+        // ✅ IDs des favoris de l'utilisateur connecté
+        $userFavorites = auth()->check()
+            ? auth()->user()->favorites()->pluck('articles.id')
+            : collect();
+
+        return view('articles.index', compact('articles', 'categories', 'userFavorites'));
     }
 
     /*
@@ -79,29 +92,27 @@ class ArticleController extends Controller
     {
         $data = $request->validated();
 
-$article = Article::create([
-    'user_id'     => auth()->id(),
-    'category_id' => $data['category_id'],
-    'title'       => $data['title'],
-    'slug'        => \Illuminate\Support\Str::slug($data['title']) . '-' . time(),
-    'description' => $data['description'],
-    'price'       => $data['price'],
-    'condition'   => $data['condition'] ?? 'bon',
-    'status'      => 'disponible',
-    'location'    => $data['location'] ?? null,
-]);
+        $article = Article::create([
+            'user_id'     => auth()->id(),
+            'category_id' => $data['category_id'],
+            'title'       => $data['title'],
+            'slug'        => Str::slug($data['title']) . '-' . time(),
+            'description' => $data['description'],
+            'price'       => $data['price'],
+            'condition'   => $data['condition'] ?? 'bon',
+            'status'      => 'disponible',
+            'location'    => $data['location'] ?? null,
+        ]);
 
         // Upload des images
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 if ($image->isValid()) {
-                $path = $image->store('articles', 'public');
-              $article->images()->create([
-    'path' => $path
-]);
+                    $path = $image->store('articles', 'public');
+                    $article->images()->create(['path' => $path]);
+                }
             }
         }
-}
 
         return redirect()
             ->route('articles.index')
@@ -121,7 +132,12 @@ $article = Article::create([
         // Incrémenter les vues
         $article->increment('views');
 
-        return view('articles.show', compact('article'));
+        // ✅ Vérifier si l'article est en favori
+        $isFavorite = auth()->check()
+            ? auth()->user()->favorites()->where('article_id', $id)->exists()
+            : false;
+
+        return view('articles.show', compact('article', 'isFavorite'));
     }
 
     /*
@@ -131,7 +147,6 @@ $article = Article::create([
     */
     public function edit(Article $article)
     {
-        // Vérifier que c'est bien son article
         if ($article->user_id !== auth()->id()) {
             abort(403, 'Action non autorisée.');
         }
@@ -157,16 +172,16 @@ $article = Article::create([
             'description' => $request->description,
             'price'       => $request->price,
             'condition'   => $request->condition ?? 'bon',
-            'status'      => $request->status ?? 'disponible', // ✅ corrigé
+            'status'      => $request->status ?? 'disponible',
         ]);
 
         // Nouvelles images ajoutées
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $path = $image->store('articles', 'public');
-                $article->images()->create([
-    'path' => $path
-]);
+                if ($image->isValid()) {
+                    $path = $image->store('articles', 'public');
+                    $article->images()->create(['path' => $path]);
+                }
             }
         }
 
@@ -188,9 +203,10 @@ $article = Article::create([
 
         // Supprimer les images du storage
         foreach ($article->images as $image) {
-if ($image->path) {
-    \Illuminate\Support\Facades\Storage::disk('public')->delete($image->path);
-}        }
+            if ($image->path) {
+                Storage::disk('public')->delete($image->path);
+            }
+        }
 
         $article->delete();
 

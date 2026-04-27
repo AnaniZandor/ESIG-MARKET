@@ -18,7 +18,6 @@
 
     {{-- COLONNE GAUCHE : GALERIE --}}
     <div class="article-gallery">
-
         {{-- IMAGE PRINCIPALE --}}
         <div class="gallery-main">
             @if($article->images && $article->images->first())
@@ -59,9 +58,9 @@
                     <span style="color:var(--text-light);">État</span>
                     <span style="font-weight:500;">
                         @switch($article->condition)
-                            @case('neuf')      ✨ Neuf @break
-                            @case('tres_bon')  👍 Très bon état @break
-                            @case('bon')       👌 Bon état @break
+                            @case('neuf')       ✨ Neuf @break
+                            @case('tres_bon')   👍 Très bon état @break
+                            @case('bon')        👌 Bon état @break
                             @case('acceptable') ⚠️ Acceptable @break
                             @default {{ $article->condition }}
                         @endswitch
@@ -83,27 +82,21 @@
                 @endif
             </div>
         </div>
-
     </div>
 
     {{-- COLONNE DROITE : INFOS & ACTIONS --}}
     <div class="article-panel">
-
-        {{-- CATÉGORIE --}}
         <div class="article-panel-category">
             {{ $article->category->name ?? 'Sans catégorie' }}
         </div>
 
-        {{-- TITRE --}}
         <h1 class="article-panel-title">{{ $article->title }}</h1>
 
-        {{-- PRIX --}}
         <div class="article-panel-price">
             {{ number_format($article->price, 0, ',', ' ') }}
             <span style="font-size:18px;font-weight:400;color:var(--text-light);">FCFA</span>
         </div>
 
-        {{-- BADGE STATUT --}}
         <div style="margin-bottom:20px;">
             <span class="badge badge-{{ $article->status === 'disponible' ? 'success' : ($article->status === 'vendu' ? 'neutral' : 'warning') }}">
                 <i class="fas fa-circle" style="font-size:8px;"></i>
@@ -111,17 +104,13 @@
             </span>
         </div>
 
-        {{-- DESCRIPTION --}}
-        <div class="article-description">
-            {{ $article->description }}
-        </div>
+        <div class="article-description">{{ $article->description }}</div>
 
         {{-- VENDEUR --}}
         <div class="seller-card">
             <div class="seller-avatar">
                 @if($article->user->avatar)
-                    <img src="{{ asset('storage/'.$article->user->avatar) }}"
-                         alt="{{ $article->user->name }}">
+                    <img src="{{ asset('storage/'.$article->user->avatar) }}" alt="{{ $article->user->name }}">
                 @else
                     {{ strtoupper(substr($article->user->name, 0, 1)) }}
                 @endif
@@ -130,16 +119,20 @@
                 <div class="seller-name">{{ $article->user->name }}</div>
                 @if($article->user->filiere)
                     <div class="seller-filiere">
-                        <i class="fas fa-graduation-cap"></i>
-                        {{ $article->user->filiere }}
+                        <i class="fas fa-graduation-cap"></i> {{ $article->user->filiere }}
                     </div>
                 @endif
                 <div class="seller-rating">
+                    @php
+                        $avgRating = round($article->user->reviewsReceived()->avg('rating') ?? 0);
+                        $totalReviews = $article->user->reviewsReceived()->count();
+                    @endphp
                     @for($i = 1; $i <= 5; $i++)
-                        <i class="fas fa-star" style="font-size:12px; {{ $i <= round($article->user->reviewsReceived()->avg('rating') ?? 0) ? 'color:var(--accent)' : 'color:var(--border-dark)' }}"></i>
+                        <i class="fas fa-star" style="font-size:13px; color:{{ $i <= $avgRating ? 'var(--accent)' : 'var(--border-dark)' }}"></i>
                     @endfor
                     <span style="font-size:12px;color:var(--text-light);margin-left:4px;">
-                        ({{ $article->user->reviewsReceived()->count() }} avis)
+                        {{ $avgRating > 0 ? number_format($article->user->reviewsReceived()->avg('rating'), 1) : '—' }}
+                        ({{ $totalReviews }} avis)
                     </span>
                 </div>
             </div>
@@ -147,38 +140,30 @@
 
         {{-- ACTIONS --}}
         <div class="article-panel-actions">
-
             @auth
                 @if(auth()->id() !== $article->user_id)
-
-                    {{-- MESSAGE AU VENDEUR --}}
+                    {{-- CONTACTER --}}
                     @if($article->status === 'disponible')
-                    <button onclick="toggleMessageForm()" class="btn btn-primary btn-full btn-lg">
-                        <i class="fas fa-comment"></i>
-                        Contacter le vendeur
+                    <button type="button" onclick="toggleMessageForm()" class="btn btn-primary btn-full btn-lg">
+                        <i class="fas fa-comment"></i> Contacter le vendeur
                     </button>
                     @else
-                    <button class="btn btn-outline-dark btn-full" disabled>
-                        <i class="fas fa-ban"></i>
-                        Article non disponible
+                    <button type="button" class="btn btn-outline-dark btn-full" disabled>
+                        <i class="fas fa-ban"></i> Article non disponible
                     </button>
                     @endif
 
-                    {{-- FORMULAIRE MESSAGE (caché par défaut) --}}
+                    {{-- FORMULAIRE MESSAGE --}}
                     <div id="message-form" style="display:none;">
                         <form action="{{ route('messages.store') }}" method="POST">
                             @csrf
                             <input type="hidden" name="receiver_id" value="{{ $article->user->id }}">
                             <input type="hidden" name="article_id" value="{{ $article->id }}">
-                            <textarea name="content"
-                                      class="form-control"
-                                      rows="3"
+                            <textarea name="content" class="form-control" rows="3"
                                       placeholder="Ex: Bonjour, est-ce que l'article est encore disponible ?"
-                                      required
-                                      style="margin-bottom:10px;"></textarea>
+                                      required style="margin-bottom:10px;"></textarea>
                             <button type="submit" class="btn btn-secondary btn-full">
-                                <i class="fas fa-paper-plane"></i>
-                                Envoyer le message
+                                <i class="fas fa-paper-plane"></i> Envoyer le message
                             </button>
                         </form>
                     </div>
@@ -187,22 +172,83 @@
                     <form action="{{ route('favorites.toggle', $article->id) }}" method="POST">
                         @csrf
                         <button type="submit" class="btn btn-outline btn-full">
-                            @if(auth()->user()->favorites->contains($article->id))
-                                <i class="fas fa-heart" style="color:var(--primary)"></i>
-                                Retirer des favoris
+                            @if($isFavorite)
+                                <i class="fas fa-heart" style="color:var(--danger)"></i> Retirer des favoris
                             @else
-                                <i class="far fa-heart"></i>
-                                Ajouter aux favoris
+                                <i class="far fa-heart"></i> Ajouter aux favoris
                             @endif
                         </button>
                     </form>
 
+                    {{-- ⭐ DONNER UN AVIS --}}
+                    @php
+                        $alreadyReviewed = $article->reviews()
+                            ->where('reviewer_id', auth()->id())
+                            ->exists();
+                    @endphp
+
+                    @if(!$alreadyReviewed)
+                    {{-- ✅ LIGNE MODIFIÉE : onclick direct --}}
+                    <button type="button" onclick="document.getElementById('review-form').style.display='block'; this.style.display='none';" class="btn btn-outline btn-full"
+                            style="border-color:var(--accent);color:var(--accent);">
+                        <i class="fas fa-star"></i> Laisser un avis
+                    </button>
+
+                    {{-- FORMULAIRE AVIS --}}
+                    <div id="review-form" style="display:none; background:var(--bg); border-radius:var(--radius); padding:16px; border:1px solid var(--border); margin-top:10px;">
+                        <form action="{{ route('reviews.store') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="reviewed_id" value="{{ $article->user_id }}">
+                            <input type="hidden" name="article_id" value="{{ $article->id }}">
+
+                            {{-- ÉTOILES INTERACTIVES --}}
+                            <div style="margin-bottom:14px;">
+                                <label class="form-label">Votre note</label>
+                                <div class="star-rating" style="display:flex; gap:6px; margin-top:6px;">
+                                    @for($i = 1; $i <= 5; $i++)
+                                    {{-- ✅ LIGNE MODIFIÉE : id="star-{{ $i }}" ajouté --}}
+                                    <i class="fas fa-star star-icon"
+                                       id="star-{{ $i }}"
+                                       data-value="{{ $i }}"
+                                       style="font-size:28px; color:var(--border-dark); transition:all 0.15s; cursor:pointer;"
+                                       onclick="setRating({{ $i }})"
+                                       onmouseover="hoverRating({{ $i }})"
+                                       onmouseout="resetHover()">
+                                    </i>
+                                    @endfor
+                                    <input type="hidden" name="rating" id="rating-input" value="0" required>
+                                </div>
+                                <div id="rating-label" style="font-size:13px;color:var(--text-light);margin-top:6px;">
+                                    Clique sur une étoile pour noter
+                                </div>
+                                @error('rating')
+                                    <div style="color:var(--danger);font-size:13px;margin-top:5px;">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- COMMENTAIRE --}}
+                            <div class="form-group">
+                                <label class="form-label">Commentaire <span style="font-weight:400;color:var(--text-light);">(optionnel)</span></label>
+                                <textarea name="comment" class="form-control" rows="3"
+                                          placeholder="Décris ton expérience avec ce vendeur..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-full">
+                                <i class="fas fa-paper-plane"></i> Publier l'avis
+                            </button>
+                        </form>
+                    </div>
+                    @else
+                    <div style="text-align:center; padding:10px; background:var(--success-bg); border-radius:var(--radius); font-size:13px; color:var(--success);">
+                        <i class="fas fa-check-circle"></i> Vous avez déjà laissé un avis
+                    </div>
+                    @endif
+
                     {{-- SIGNALER --}}
-                    <button onclick="toggleReportForm()"
+                    <button type="button" onclick="toggleReportForm()"
                             class="btn btn-ghost btn-full"
                             style="font-size:13px;color:var(--text-light);">
-                        <i class="fas fa-flag"></i>
-                        Signaler cette annonce
+                        <i class="fas fa-flag"></i> Signaler cette annonce
                     </button>
 
                     {{-- FORMULAIRE SIGNALEMENT --}}
@@ -224,14 +270,13 @@
                     </div>
 
                 @else
-                    {{-- C'EST SON PROPRE ARTICLE --}}
+                    {{-- SON PROPRE ARTICLE --}}
                     <a href="{{ route('articles.edit', $article) }}" class="btn btn-outline btn-full">
                         <i class="fas fa-pen"></i> Modifier l'annonce
                     </a>
                     @if($article->status === 'disponible')
                     <form action="{{ route('articles.sold', $article) }}" method="POST">
-                        @csrf
-                        @method('PATCH')
+                        @csrf @method('PATCH')
                         <button type="submit" class="btn btn-secondary btn-full">
                             <i class="fas fa-check"></i> Marquer comme vendu
                         </button>
@@ -239,77 +284,159 @@
                     @endif
                     <form action="{{ route('articles.destroy', $article) }}" method="POST"
                           onsubmit="return confirm('Supprimer cette annonce ?')">
-                        @csrf
-                        @method('DELETE')
+                        @csrf @method('DELETE')
                         <button type="submit" class="btn btn-danger btn-full">
                             <i class="fas fa-trash"></i> Supprimer l'annonce
                         </button>
                     </form>
                 @endif
-
             @else
                 <a href="{{ route('login') }}" class="btn btn-primary btn-full btn-lg">
                     <i class="fas fa-right-to-bracket"></i>
                     Connecte-toi pour contacter le vendeur
                 </a>
             @endauth
-
         </div>
-
     </div>
-
 </div>
 
-{{-- AVIS --}}
-@if($article->reviews && $article->reviews->count() > 0)
+{{-- SECTION AVIS --}}
 <div style="margin-top:48px;">
-    <h3 class="section-title">Avis sur le vendeur</h3>
+    <h3 class="section-title">
+        Avis sur le vendeur
+        @if($article->reviews->count() > 0)
+            <span style="font-size:14px;font-weight:400;color:var(--text-light);">
+                {{ $article->reviews->count() }} avis —
+                moyenne {{ number_format($article->reviews->avg('rating'), 1) }}/5
+            </span>
+        @endif
+    </h3>
+
+    @if($article->reviews && $article->reviews->count() > 0)
     <div style="display:flex;flex-direction:column;gap:12px;">
         @foreach($article->reviews as $review)
-        <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                <div class="seller-avatar-sm">
+        <div style="background:white;border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                <div class="seller-avatar-sm" style="width:40px;height:40px;font-size:15px;flex-shrink:0;">
                     {{ strtoupper(substr($review->reviewer->name, 0, 1)) }}
                 </div>
-                <div>
+                <div style="flex:1;">
                     <div style="font-weight:600;font-size:14px;">{{ $review->reviewer->name }}</div>
-                    <div style="color:var(--accent);">
+                    <div style="display:flex;align-items:center;gap:3px;margin-top:3px;">
                         @for($i = 1; $i <= 5; $i++)
-                            <i class="fas fa-star" style="font-size:12px;{{ $i <= $review->rating ? '' : 'color:var(--border-dark)' }}"></i>
+                            <i class="fas fa-star"
+                               style="font-size:13px;color:{{ $i <= $review->rating ? 'var(--accent)' : 'var(--border-dark)' }}"></i>
                         @endfor
+                        <span style="font-size:12px;color:var(--text-light);margin-left:6px;">
+                            {{ $review->rating }}/5
+                        </span>
                     </div>
                 </div>
-                <div style="margin-left:auto;font-size:12px;color:var(--text-light);">
+                <div style="font-size:12px;color:var(--text-light);">
                     {{ $review->created_at->diffForHumans() }}
                 </div>
             </div>
             @if($review->comment)
-            <p style="font-size:14px;color:var(--text-mid);margin:0;">{{ $review->comment }}</p>
+            <p style="font-size:14px;color:var(--text-mid);margin:0;line-height:1.6;padding-top:10px;border-top:1px solid var(--border);">
+                {{ $review->comment }}
+            </p>
             @endif
         </div>
         @endforeach
     </div>
+    @else
+    <div class="empty-state" style="padding:40px;">
+        <i class="fas fa-star" style="color:var(--border-dark);"></i>
+        <h3>Aucun avis pour l'instant</h3>
+        <p>Sois le premier à laisser un avis sur ce vendeur !</p>
+    </div>
+    @endif
 </div>
-@endif
 
-@section('scripts')
+@endsection
+
+@push('scripts')
 <script>
+// ── Galerie photos ──────────────────────────────────
 function switchImage(src, thumb) {
     document.getElementById('main-img').src = src;
     document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
     thumb.classList.add('active');
 }
 
+// ── Formulaires toggle ──────────────────────────────
 function toggleMessageForm() {
-    const form = document.getElementById('message-form');
-    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    var f = document.getElementById('message-form');
+    if (f.style.display === 'none' || f.style.display === '') {
+        f.style.display = 'block';
+    } else {
+        f.style.display = 'none';
+    }
 }
 
 function toggleReportForm() {
-    const form = document.getElementById('report-form');
-    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    var f = document.getElementById('report-form');
+    if (f.style.display === 'none' || f.style.display === '') {
+        f.style.display = 'block';
+    } else {
+        f.style.display = 'none';
+    }
+}
+
+function toggleReviewForm() {
+    var f = document.getElementById('review-form');
+    if (f.style.display === 'none' || f.style.display === '') {
+        f.style.display = 'block';
+    } else {
+        f.style.display = 'none';
+    }
+}
+
+// ── Système de notation étoiles ─────────────────────
+var labels = ['', 'Très mauvais 😞', 'Mauvais 😕', 'Correct 😐', 'Bien 😊', 'Excellent ! 🌟'];
+var selectedRating = 0;
+
+function setRating(value) {
+    selectedRating = value;
+    document.getElementById('rating-input').value = value;
+    updateStarsDisplay(selectedRating);
+    document.getElementById('rating-label').textContent = labels[value];
+    document.getElementById('rating-label').style.color = 'var(--accent)';
+    document.getElementById('rating-label').style.fontWeight = '600';
+}
+
+function hoverRating(value) {
+    updateStarsDisplay(value);
+    document.getElementById('rating-label').textContent = labels[value];
+}
+
+function resetHover() {
+    updateStarsDisplay(selectedRating);
+    if (selectedRating > 0) {
+        document.getElementById('rating-label').textContent = labels[selectedRating];
+        document.getElementById('rating-label').style.color = 'var(--accent)';
+        document.getElementById('rating-label').style.fontWeight = '600';
+    } else {
+        document.getElementById('rating-label').textContent = 'Clique sur une étoile pour noter';
+        document.getElementById('rating-label').style.color = 'var(--text-light)';
+        document.getElementById('rating-label').style.fontWeight = '400';
+    }
+}
+
+function updateStarsDisplay(rating) {
+    // Utiliser les IDs individuels au lieu de querySelectorAll
+    for (var i = 1; i <= 5; i++) {
+        var star = document.getElementById('star-' + i);
+        if (star) {
+            if (i <= rating) {
+                star.style.color = 'var(--accent)';
+                star.style.transform = 'scale(1.15)';
+            } else {
+                star.style.color = 'var(--border-dark)';
+                star.style.transform = 'scale(1)';
+            }
+        }
+    }
 }
 </script>
-@endsection
-
-@endsection
+@endpush

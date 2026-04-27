@@ -88,13 +88,29 @@
             {{-- ACTIONS --}}
             <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
 
-                {{-- Lien vers l'article si disponible --}}
-                @if(isset($notif->data['article_id']))
-                    <a href="{{ route('articles.show', $notif->data['article_id']) }}"
-                       class="btn btn-outline btn-sm">
-                        <i class="fas fa-eye"></i> Voir
-                    </a>
-                @endif
+           {{-- Lien selon le type de notification --}}
+@if($notif->type === 'App\Notifications\NewMessageNotification')
+    {{-- Ouvre la conversation directement --}}
+    @if(isset($notif->data['article_id']) && isset($notif->data['message_id']))
+        @php
+            $msg = \App\Models\Message::find($notif->data['message_id']);
+        @endphp
+        @if($msg)
+        <a href="{{ route('messages.conversation', [
+                'userId'    => $msg->sender_id,
+                'articleId' => $msg->article_id
+            ]) }}"
+           class="btn btn-primary btn-sm">
+            <i class="fas fa-comment"></i> Répondre
+        </a>
+        @endif
+    @endif
+@elseif(isset($notif->data['article_id']))
+    <a href="{{ route('articles.show', $notif->data['article_id']) }}"
+       class="btn btn-outline btn-sm">
+        <i class="fas fa-eye"></i> Voir
+    </a>
+@endif
 
                 {{-- Marquer comme lu --}}
                 @if(!$notif->read_at)

@@ -13,18 +13,21 @@
         </div>
         <h1>Achetez & vendez<br><em>entre étudiants</em></h1>
         <p>Des centaines d'articles de seconde main à petit prix, directement entre étudiants de l'ESIG.</p>
-<form action="{{ route('articles.index') }}" method="GET" class="hero-search" id="search-form-hero">
-    <input type="text"
-           name="search"
-           id="search-input-hero"
-           placeholder="Rechercher un article..."
-           value="{{ request('search') }}"
-           oninput="handleSearch(this, 'search-form-hero')">
-    <button type="submit">
-        <i class="fas fa-search"></i>
-        Rechercher
-    </button>
-</form>
+
+        {{-- BARRE DE RECHERCHE --}}
+        <form action="{{ route('articles.index') }}" method="GET"
+              class="hero-search" id="search-form-hero">
+            <input type="text"
+                   name="search"
+                   id="search-input-hero"
+                   placeholder="Rechercher un article..."
+                   value="{{ request('search') }}"
+                   oninput="handleSearch(this, 'search-form-hero')">
+            <button type="submit">
+                <i class="fas fa-search"></i>
+                Rechercher
+            </button>
+        </form>
 
         <div class="hero-stats">
             <div class="hero-stat">
@@ -52,30 +55,12 @@
            class="category-pill {{ !request('category') ? 'active' : '' }}">
             <i class="fas fa-th"></i> Tout
         </a>
-        <a href="{{ route('articles.index', ['category' => 'vetements']) }}"
-           class="category-pill {{ request('category') == 'vetements' ? 'active' : '' }}">
-            👗 Vêtements
-        </a>
-        <a href="{{ route('articles.index', ['category' => 'livres']) }}"
-           class="category-pill {{ request('category') == 'livres' ? 'active' : '' }}">
-            📚 Livres & Cours
-        </a>
-        <a href="{{ route('articles.index', ['category' => 'electronique']) }}"
-           class="category-pill {{ request('category') == 'electronique' ? 'active' : '' }}">
-            💻 Électronique
-        </a>
-        <a href="{{ route('articles.index', ['category' => 'sport']) }}"
-           class="category-pill {{ request('category') == 'sport' ? 'active' : '' }}">
-            ⚽ Sport
-        </a>
-        <a href="{{ route('articles.index', ['category' => 'maison']) }}"
-           class="category-pill {{ request('category') == 'maison' ? 'active' : '' }}">
-            🏠 Maison
-        </a>
-        <a href="{{ route('articles.index', ['category' => 'autre']) }}"
-           class="category-pill {{ request('category') == 'autre' ? 'active' : '' }}">
-            📦 Autre
-        </a>
+        @foreach($categories as $cat)
+            <a href="{{ route('articles.index', ['category' => $cat->slug]) }}"
+               class="category-pill {{ request('category') == $cat->slug ? 'active' : '' }}">
+                {{ $cat->icon }} {{ $cat->name }}
+            </a>
+        @endforeach
     </div>
 
     {{-- TITRE SECTION --}}
@@ -95,13 +80,16 @@
     @if($articles->count() > 0)
     <div class="grid-articles">
         @foreach($articles as $article)
-        <div class="article-card">
+        <div class="article-card" data-aos="fade-up">
 
             {{-- IMAGE --}}
             <div class="article-card-img">
+
+                {{-- LIEN VERS L'ARTICLE --}}
                 <a href="{{ route('articles.show', $article->id) }}">
                     @if($article->images && $article->images->first())
-<img src="{{ asset('storage/'.$article->images->first()->path) }}"                             alt="{{ $article->title }}">
+                        <img src="{{ asset('storage/'.$article->images->first()->path) }}"
+                             alt="{{ $article->title }}">
                     @else
                         <div class="no-img">
                             <i class="fas fa-image"></i>
@@ -109,23 +97,30 @@
                     @endif
                 </a>
 
-             {{-- BADGE STATUT --}}
-@if($article->status !== 'disponible')
-    <span class="badge-status {{ $article->status }}">
-        {{ $article->status === 'vendu' ? '✓ Vendu' : '⚠ Suspendu' }}
-    </span>
-@endif
+                {{-- BADGE STATUT --}}
+                @if($article->status !== 'disponible')
+                    <span class="badge-status {{ $article->status }}">
+                        {{ $article->status === 'vendu' ? '✓ Vendu' : '⚠ Suspendu' }}
+                    </span>
+                @endif
 
-                {{-- BOUTON FAVORI --}}
+                {{-- BOUTON FAVORI ✅ --}}
                 @auth
-                <form action="{{ route('favorites.toggle', $article->id) }}" method="POST"
+                @php
+                    $isFavorite = $userFavorites->contains($article->id);
+                @endphp
+                <form action="{{ route('favorites.toggle', $article->id) }}"
+                      method="POST"
                       style="position:absolute; top:12px; right:12px;">
                     @csrf
-                    <button type="submit" class="btn-favorite">
-                        <i class="fas fa-heart"></i>
+                    <button type="submit"
+                            class="btn-favorite {{ $isFavorite ? 'active' : '' }}"
+                            title="{{ $isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' }}">
+                        <i class="{{ $isFavorite ? 'fas' : 'far' }} fa-heart"></i>
                     </button>
                 </form>
                 @endauth
+
             </div>
 
             {{-- INFOS --}}
@@ -152,7 +147,13 @@
                         {{ $article->user->name }}
                     </div>
                     <span class="article-card-condition">
-                        {{ ucfirst(str_replace('_', ' ', $article->condition ?? 'bon')) }}
+                        @switch($article->condition)
+                            @case('neuf')       ✨ Neuf @break
+                            @case('tres_bon')   👍 Très bon @break
+                            @case('bon')        👌 Bon état @break
+                            @case('acceptable') ⚠️ Acceptable @break
+                            @default {{ $article->condition }}
+                        @endswitch
                     </span>
                 </div>
 
@@ -171,7 +172,11 @@
     <div class="empty-state">
         <i class="fas fa-box-open"></i>
         <h3>Aucun article trouvé</h3>
-        <p>{{ request('search') ? 'Essaie avec d\'autres mots-clés.' : 'Sois le premier à publier une annonce !' }}</p>
+        <p>
+            {{ request('search')
+                ? 'Essaie avec d\'autres mots-clés.'
+                : 'Sois le premier à publier une annonce !' }}
+        </p>
         @auth
         <a href="{{ route('articles.create') }}" class="btn btn-primary" style="margin-top:16px;">
             <i class="fas fa-plus"></i> Publier un article

@@ -16,6 +16,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+{{-- AOS — Animations au scroll --}}
+<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+{{-- resources/views/layouts/app.blade.php --}}
+
 
 
     {{-- 🔥 VITE (IMPORTANT SI BREEZE) --}}
@@ -51,7 +55,7 @@
     {{-- FOOTER --}}
     @include('partials.footer')
 
-    @yield('scripts')
+    @stack('scripts')
 
     <script>
 function handleSearch(input, formId) {
@@ -68,7 +72,73 @@ function handleSearch(input, formId) {
 </script>
 
 @yield('scripts')
-</body>
+{{-- AOS Init --}}
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<script>
+    AOS.init({
+        duration: 600,
+        easing: 'ease-out-cubic',
+        once: true,
+        offset: 60
+    });
+</script>
 
+<script>
+// ── Navbar scroll effect ──────────────────────────────
+window.addEventListener('scroll', () => {
+    const navbar = document.querySelector('.navbar');
+    if (navbar) {
+        navbar.classList.toggle('scrolled', window.scrollY > 20);
+    }
+});
+
+// ── Toast notifications ───────────────────────────────
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'circle-check' : 'circle-exclamation'}"
+           style="color:var(--${type === 'success' ? 'success' : 'danger'});font-size:18px;"></i>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('hide');
+        setTimeout(() => toast.remove(), 400);
+    }, 3500);
+}
+
+// ── Afficher les flash messages comme toast ───────────
+@if(session('success'))
+    document.addEventListener('DOMContentLoaded', () => {
+        showToast("{{ session('success') }}", 'success');
+    });
+@endif
+
+@if(session('error'))
+    document.addEventListener('DOMContentLoaded', () => {
+        showToast("{{ session('error') }}", 'danger');
+    });
+@endif
+
+// ── Bouton favori avec animation ─────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.btn-favorite').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+    });
+});
+
+// ── Recherche auto-submit quand champ vide ────────────
+function handleSearch(input, formId) {
+    if (input.value === '') {
+        clearTimeout(window.searchTimer);
+        window.searchTimer = setTimeout(() => {
+            document.getElementById(formId).submit();
+        }, 300);
+    }
+}
+</script>
 </body>
 </html>

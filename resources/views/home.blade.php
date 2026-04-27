@@ -81,18 +81,23 @@
                     </span>
                 @endif
 
-                {{-- FAVORI --}}
-                @auth
-                <form action="{{ route('favorites.toggle', $article->id) }}" method="POST"
-                      style="position:absolute; top:12px; right:12px;">
-                    @csrf
-                    <button type="submit" class="btn-favorite">
-                        <i class="fas fa-heart"></i>
-                    </button>
-                </form>
-                @endauth
+            
+            {{-- FAVORI --}}
+@auth
+<form action="{{ route('favorites.toggle', $article->id) }}" method="POST"
+      style="position:absolute; top:12px; right:12px;">
+    @csrf
+    @php
+        $isFavorite = auth()->user()->favorites->contains($article->id);
+    @endphp
+    <button type="submit"
+            class="btn-favorite {{ $isFavorite ? 'active' : '' }}"
+            title="{{ $isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris' }}">
+        <i class="{{ $isFavorite ? 'fas' : 'far' }} fa-heart"></i>
+    </button>
+</form>
+@endauth
             </div>
-
             {{-- INFOS --}}
             <div class="article-card-body">
                 <div class="article-card-category">

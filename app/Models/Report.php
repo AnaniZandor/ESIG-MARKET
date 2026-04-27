@@ -15,7 +15,7 @@ class Report extends Model
     */
 
     protected $fillable = [
-        'user_id',      // utilisateur qui signale
+        'reporter_id',      // utilisateur qui signale
         'article_id',   // article signalé
         'reason',       // raison du signalement
         'message',      // détail du signalement

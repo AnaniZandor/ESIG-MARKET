@@ -41,15 +41,16 @@
                             {{ $article->status === 'vendu' ? '✓ Vendu' : '⚠ Suspendu' }}
                         </span>
                     @endif
-
-                    {{-- BOUTON RETIRER DES FAVORIS --}}
-                    <form action="{{ route('favorites.toggle', $article->id) }}" method="POST"
-                          style="position:absolute; top:12px; right:12px;">
-                        @csrf
-                        <button type="submit" class="btn-favorite active" title="Retirer des favoris">
-                            <i class="fas fa-heart"></i>
-                        </button>
-                    </form>
+{{-- BOUTON RETIRER DES FAVORIS --}}
+<form action="{{ route('favorites.toggle', $article->id) }}" method="POST"
+      style="position:absolute; top:12px; right:12px;">
+    @csrf
+    <button type="submit"
+            class="btn-favorite active"
+            title="Retirer des favoris">
+        <i class="fas fa-heart"></i>
+    </button>
+</form>
                 </div>
 
                 {{-- INFOS --}}

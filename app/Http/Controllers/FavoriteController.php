@@ -8,18 +8,31 @@ use Illuminate\Support\Facades\Auth;
 
 class FavoriteController extends Controller
 {
-    // ─── Liste des favoris de l'utilisateur ───────────────────
+    /*
+    |--------------------------------------------------------------------------
+    | LISTE DES FAVORIS
+    |--------------------------------------------------------------------------
+    */
     public function index()
     {
-        $favorites = Auth::user()->favorites()
-                        ->with(['images', 'category', 'user'])
-                        ->latest('favorites.created_at')
-                        ->get();
+        // favorites() est un belongsToMany vers Article
+        // donc on peut directement chaîner with() sur les articles
+        $favorites = auth()->user()
+                           ->favorites()
+                           ->with(['images', 'category', 'user'])
+                           ->get();
 
-        return view('favorites.index', compact('favorites'));
+        // Ids des favoris pour afficher le cœur actif
+        $userFavorites = $favorites->pluck('id');
+
+        return view('favorites.index', compact('favorites', 'userFavorites'));
     }
 
-    // ─── Ajouter / Retirer un favori ──────────────────────────
+    /*
+    |--------------------------------------------------------------------------
+    | AJOUTER / RETIRER UN FAVORI
+    |--------------------------------------------------------------------------
+    */
     public function toggle($articleId)
     {
         $user    = Auth::user();
