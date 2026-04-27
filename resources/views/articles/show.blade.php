@@ -364,67 +364,84 @@ function switchImage(src, thumb) {
     thumb.classList.add('active');
 }
 
-// ── Formulaires toggle ──────────────────────────────
+// ── Formulaires toggle (CORRIGÉS) ──────────────────
 function toggleMessageForm() {
     var f = document.getElementById('message-form');
-    if (f.style.display === 'none' || f.style.display === '') {
-        f.style.display = 'block';
-    } else {
-        f.style.display = 'none';
+    if (f) {
+        if (f.style.display === 'none' || f.style.display === '') {
+            f.style.display = 'block';
+        } else {
+            f.style.display = 'none';
+        }
     }
+    return false;
 }
 
 function toggleReportForm() {
     var f = document.getElementById('report-form');
-    if (f.style.display === 'none' || f.style.display === '') {
-        f.style.display = 'block';
-    } else {
-        f.style.display = 'none';
+    if (f) {
+        if (f.style.display === 'none' || f.style.display === '') {
+            f.style.display = 'block';
+        } else {
+            f.style.display = 'none';
+        }
     }
+    return false;
 }
 
 function toggleReviewForm() {
     var f = document.getElementById('review-form');
-    if (f.style.display === 'none' || f.style.display === '') {
-        f.style.display = 'block';
-    } else {
-        f.style.display = 'none';
+    if (f) {
+        if (f.style.display === 'none' || f.style.display === '') {
+            f.style.display = 'block';
+        } else {
+            f.style.display = 'none';
+        }
     }
+    return false;
 }
 
-// ── Système de notation étoiles ─────────────────────
+// ── Système de notation étoiles (CORRIGÉ) ───────────
 var labels = ['', 'Très mauvais 😞', 'Mauvais 😕', 'Correct 😐', 'Bien 😊', 'Excellent ! 🌟'];
 var selectedRating = 0;
 
 function setRating(value) {
     selectedRating = value;
-    document.getElementById('rating-input').value = value;
+    var ratingInput = document.getElementById('rating-input');
+    if (ratingInput) ratingInput.value = value;
     updateStarsDisplay(selectedRating);
-    document.getElementById('rating-label').textContent = labels[value];
-    document.getElementById('rating-label').style.color = 'var(--accent)';
-    document.getElementById('rating-label').style.fontWeight = '600';
+    var label = document.getElementById('rating-label');
+    if (label) {
+        label.textContent = labels[value];
+        label.style.color = 'var(--accent)';
+        label.style.fontWeight = '600';
+    }
+    return false;
 }
 
 function hoverRating(value) {
     updateStarsDisplay(value);
-    document.getElementById('rating-label').textContent = labels[value];
+    var label = document.getElementById('rating-label');
+    if (label) label.textContent = labels[value];
 }
 
 function resetHover() {
     updateStarsDisplay(selectedRating);
-    if (selectedRating > 0) {
-        document.getElementById('rating-label').textContent = labels[selectedRating];
-        document.getElementById('rating-label').style.color = 'var(--accent)';
-        document.getElementById('rating-label').style.fontWeight = '600';
-    } else {
-        document.getElementById('rating-label').textContent = 'Clique sur une étoile pour noter';
-        document.getElementById('rating-label').style.color = 'var(--text-light)';
-        document.getElementById('rating-label').style.fontWeight = '400';
+    var label = document.getElementById('rating-label');
+    if (label) {
+        if (selectedRating > 0) {
+            label.textContent = labels[selectedRating];
+            label.style.color = 'var(--accent)';
+            label.style.fontWeight = '600';
+        } else {
+            label.textContent = 'Clique sur une étoile pour noter';
+            label.style.color = 'var(--text-light)';
+            label.style.fontWeight = '400';
+        }
     }
 }
 
 function updateStarsDisplay(rating) {
-    // Utiliser les IDs individuels au lieu de querySelectorAll
     for (var i = 1; i <= 5; i++) {
         var star = document.getElementById('star-' + i);
         if (star) {
@@ -438,5 +455,15 @@ function updateStarsDisplay(rating) {
         }
     }
 }
+
+// ── FORCER LE CHARGEMENT CORRECT DES ÉTOILES ────────
+document.addEventListener('DOMContentLoaded', function() {
+    // Réinitialiser les étoiles si besoin
+    var ratingInput = document.getElementById('rating-input');
+    if (ratingInput && ratingInput.value > 0) {
+        selectedRating = parseInt(ratingInput.value);
+        updateStarsDisplay(selectedRating);
+    }
+});
 </script>
 @endpush
