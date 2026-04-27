@@ -179,7 +179,116 @@
         max-width: 100%;
     }
 }
+
+/* ============================================================
+   MODE NUIT/JOUR - STYLES AJOUTÉS
+   ============================================================ */
+
+/* Mode nuit */
+.dark-mode {
+    background-color: #1a1a2e !important;
+    color: #eee !important;
+}
+
+.dark-mode .card,
+.dark-mode .navbar,
+.dark-mode .modal-content,
+.dark-mode .dropdown-menu {
+    background-color: #16213e !important;
+    border-color: #0f3460 !important;
+}
+
+.dark-mode .card-header,
+.dark-mode .card-footer {
+    background-color: #0f3460 !important;
+    border-color: #1a1a2e !important;
+}
+
+.dark-mode .form-control,
+.dark-mode .input-group-text {
+    background-color: #0f3460 !important;
+    color: #eee !important;
+    border-color: #1a1a2e !important;
+}
+
+.dark-mode .btn-outline-dark {
+    color: #eee;
+    border-color: #0f3460;
+}
+
+.dark-mode .btn-outline-dark:hover {
+    background-color: #0f3460;
+    color: white;
+}
+
+.dark-mode .text-muted {
+    color: #aaa !important;
+}
+
+.dark-mode .list-group-item {
+    background-color: #16213e !important;
+    color: #eee !important;
+    border-color: #0f3460 !important;
+}
+
+.dark-mode .dropdown-item {
+    color: #eee !important;
+}
+
+.dark-mode .dropdown-item:hover {
+    background-color: #0f3460 !important;
+}
+
+.dark-mode .border {
+    border-color: #0f3460 !important;
+}
+
+.dark-mode .navbar-actions {
+    background: #16213e !important;
+}
+
+.dark-mode .hamburger-btn span {
+    background: #eee !important;
+}
+
+/* Animation douce lors du changement */
+body {
+    transition: background-color 0.3s ease, color 0.2s ease;
+}
+
+.card, .navbar, .form-control {
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Bouton mode nuit/jour */
+.theme-toggle-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 8px 12px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dark);
+}
+
+.theme-toggle-btn:hover {
+    background: var(--bg-light);
+    transform: scale(1.05);
+}
+
+.dark-mode .theme-toggle-btn {
+    color: #f1c40f;
+}
+
+.dark-mode .theme-toggle-btn:hover {
+    background: #0f3460;
+}
 </style>
+
 <nav class="navbar">
     <div class="container" style="display:flex; align-items:center; height:68px; gap:20px;">
 
@@ -218,6 +327,8 @@
                 <i class="fas fa-search"></i>
             </button>
         </form>
+
+
 
         {{-- 🍔 BOUTON HAMBURGER (visible uniquement sur mobile) --}}
         <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu">
@@ -279,6 +390,11 @@
                     @endif
                 </a>
 
+                        {{-- 🌙☀️ BOUTON MODE NUIT/JOUR (AJOUTÉ) --}}
+        <button class="theme-toggle-btn" id="themeToggle" title="Changer de thème">
+            <i id="themeIcon" class="fas fa-moon"></i>
+        </button>
+
                 {{-- 🚪 DÉCONNEXION --}}
                 <form method="POST" action="{{ route('logout') }}" style="display:inline;">
                     @csrf
@@ -308,8 +424,9 @@
 {{-- Overlay pour fermer le menu en cliquant à l'extérieur --}}
 <div class="menu-overlay" id="menu-overlay"></div>
 
-{{-- JavaScript pour le menu hamburger --}}
+{{-- JavaScript pour le menu hamburger + mode nuit/jour --}}
 <script>
+// ========== MENU HAMBURGER ==========
 document.addEventListener('DOMContentLoaded', function() {
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const navbarActions = document.getElementById('navbar-actions');
@@ -389,4 +506,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// ========== MODE NUIT/JOUR ==========
+function setTheme(theme) {
+    if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+        const icon = document.getElementById('themeIcon');
+        if (icon) icon.className = 'fas fa-sun';
+    } else {
+        document.body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+        const icon = document.getElementById('themeIcon');
+        if (icon) icon.className = 'fas fa-moon';
+    }
+}
+
+// Vérifier le thème sauvegardé au chargement
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+    setTheme('dark');
+}
+
+// Bouton toggle
+const themeToggle = document.getElementById('themeToggle');
+if (themeToggle) {
+    themeToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        const currentTheme = localStorage.getItem('theme');
+        if (currentTheme === 'dark') {
+            setTheme('light');
+        } else {
+            setTheme('dark');
+        }
+    });
+}
 </script>
