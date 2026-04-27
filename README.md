@@ -124,7 +124,7 @@ app/Http/Controllers/
 
 ## 📄 Licence
 
-Projet académique - ESIG (École Supérieure d'Informatique)
+Projet académique - ESIG (École Supérieure d'Informatique et de Gestion)
 
 ---
 
