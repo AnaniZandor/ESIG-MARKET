@@ -104,15 +104,25 @@ class ArticleController extends Controller
             'location'    => $data['location'] ?? null,
         ]);
 
-        // Upload des images
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                if ($image->isValid()) {
-                    $path = $image->store('articles', 'public');
-                    $article->images()->create(['path' => $path]);
-                }
+// Upload des images (sécurisé)
+if ($request->hasFile('images')) {
+    foreach ($request->file('images') as $image) {
+        if ($image->isValid()) {
+            // Vérification supplémentaire du type MIME réel
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+            $mimeType = $image->getMimeType();
+            
+            if (!in_array($mimeType, $allowedMimes)) {
+                continue; // Ignorer les fichiers non-image
             }
+            
+            // Renommer le fichier pour éviter les noms malveillants
+            $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('articles', $filename, 'public');
+            $article->images()->create(['path' => $path]);
         }
+    }
+}
 
         return redirect()
             ->route('articles.index')
@@ -175,15 +185,25 @@ class ArticleController extends Controller
             'status'      => $request->status ?? 'disponible',
         ]);
 
-        // Nouvelles images ajoutées
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                if ($image->isValid()) {
-                    $path = $image->store('articles', 'public');
-                    $article->images()->create(['path' => $path]);
-                }
+     // Nouvelles images ajoutées (sécurisé)
+if ($request->hasFile('images')) {
+    foreach ($request->file('images') as $image) {
+        if ($image->isValid()) {
+            // Vérification supplémentaire du type MIME réel
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+            $mimeType = $image->getMimeType();
+            
+            if (!in_array($mimeType, $allowedMimes)) {
+                continue;
             }
+            
+            // Renommer le fichier
+            $filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            $path = $image->storeAs('articles', $filename, 'public');
+            $article->images()->create(['path' => $path]);
         }
+    }
+}
 
         return redirect()
             ->route('articles.index')
